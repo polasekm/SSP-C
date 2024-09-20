@@ -1,8 +1,8 @@
 /*
- * usart.c
+ * spp.c
  *
- *  Created on: Apr 9, 2011
- *      Author: Martin
+ *  Created on: 1.6. 2021
+ *      Author: Martin Polasek
  */
 //------------------------------------------------------------------------------
 #include "ssp.h"

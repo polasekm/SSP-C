@@ -1,9 +1,9 @@
 /*-----------------------------------------------------------------------------*/
 /*
- * usart.h
+ * spp.h
  *
- *  Created on: Apr 9, 2011
- *      Author: Martin
+ *  Created on: 1.6. 2021
+ *      Author: Martin Polasek
  */
 /*-----------------------------------------------------------------------------*/
 #ifndef SPP_H_INCLUDED
@@ -15,23 +15,23 @@
 
 /* Exported types ------------------------------------------------------------*/
 /**
-  * @brief  Ring buffer structure definition
+  * @brief  SSP structure definition
   */
 typedef struct
 {
-  uint8_t *buff;        //ukazatel na pocatek bufferu
+  uint8_t *buff;        //buffer pointer
 
   uint8_t *write;       //zapisovaci ukazatel
-  uint16_t size;        //velikost bufferu
+  uint16_t size;        //buffer size
 
-  uint8_t magic;        //stav parseru
-  uint8_t state;        //stav parseru
-  uint16_t len;         //stav parseru
-  uint16_t cc;          //stav parseru
-  uint16_t ccc;         //stav parseru
+  uint8_t magic;        //
+  uint8_t state;        //state
+  uint16_t len;         //packet length
+  uint16_t cc;          //packet CC
+  uint16_t ccc;         //receive data CC
 
-  uint32_t err_cnt;     //stav parseru
-  uint32_t pck_cnt;     //stav parseru
+  uint32_t err_cnt;     //error counter
+  uint32_t pck_cnt;     //packet counter
 
 } spp_t;
 
