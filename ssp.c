@@ -1,5 +1,5 @@
 /*
- * spp.c
+ * ssp.c
  *
  *  Created on: 1.6. 2021
  *      Author: Martin Polasek
@@ -12,92 +12,93 @@
 #define COUNTOF(__BUFFER__)   (sizeof(__BUFFER__) / sizeof(*(__BUFFER__)))
 
 //------------------------------------------------------------------------------
-void spp_init(spp_t *spp, uint8_t *buff, uint16_t size)
+void ssp_init(ssp_t *ssp, uint8_t *buff, uint16_t size)
 {
-  spp->buff = buff;
-  spp->size = size;
+  ssp->buff = buff;
+  ssp->size = size;
 
-  spp->write = buff;
-  spp->magic = 0;
-  spp->state = SPP_STATE_WAIT;
-  spp->len = 0;
+  ssp->write = buff;
+  ssp->magic = 0;
+  ssp->state = SSP_STATE_WAIT;
+  ssp->len = 0;
 
-  spp->err_cnt = 0;
-  spp->pck_cnt = 0;
+  ssp->err_cnt = 0;
+  ssp->pck_cnt = 0;
 }
 //------------------------------------------------------------------------------
-uint8_t spp_receive(spp_t *spp, uint8_t byte)
+uint8_t ssp_receive(ssp_t *ssp, uint8_t byte)
 {
-  if(spp->magic == 1)
+  if(ssp->magic == 1)
   {
-    spp->magic = 0;
+    ssp->magic = 0;
 
-    if(byte != SPP_MAGIC)
+    if(byte != SSP_MAGIC)
     {
-      spp->write = spp->buff;
+      if(ssp->state != SSP_STATE_WAIT) ssp->err_cnt++;
 
-      spp->state = SPP_STATE_LEN2;
-      spp->len = byte;
-
-      spp->cc = 0;
-      spp->ccc = 0;
+      ssp->state = SSP_STATE_LEN2;
+      ssp->write = ssp->buff;
+      ssp->len = byte;
+      ssp->ccc = byte;
+      ssp->cc = 0;
 
       return 0;
     }
   }
   else
   {
-    if(byte == SPP_MAGIC)
+    if(byte == SSP_MAGIC)
     {
-      spp->magic = 1;
+      ssp->magic = 1;
       return 0;
     }
   }
 
-  switch(spp->state)
+  switch(ssp->state)
   {
-    case SPP_STATE_LEN2:
-      spp->len += (uint16_t)byte << 8;
-      spp->state = SPP_STATE_DATA;
+    case SSP_STATE_LEN2:
+      ssp->len += (uint16_t)byte << 8;
+      ssp->ccc += byte;
+      ssp->state = SSP_STATE_DATA;
       break;
 
-    case SPP_STATE_DATA:
-      *spp->write++ = byte;
-      spp->ccc += byte;
+    case SSP_STATE_DATA:
+      *ssp->write++ = byte;
+      ssp->ccc += byte;
 
-      if(spp->write - spp->buff >= spp->len)
+      if(ssp->write - ssp->buff >= ssp->len)
       {
-        spp->state = SPP_STATE_CC1;
+        ssp->state = SSP_STATE_CC1;
       }
-      else if(spp->write - spp->buff >= spp->size)
+      else if(ssp->write - ssp->buff >= ssp->size)
       {
-        spp->err_cnt++;
-        spp->state = SPP_STATE_WAIT;
+        ssp->err_cnt++;
+        ssp->state = SSP_STATE_WAIT;
         return 0;
       }
       break;
 
-    case SPP_STATE_CC1:
-      spp->cc = byte;
-      spp->state = SPP_STATE_CC2;
+    case SSP_STATE_CC1:
+      ssp->cc = byte;
+      ssp->state = SSP_STATE_CC2;
       break;
 
-    case SPP_STATE_CC2:
-      spp->cc += (uint16_t)byte << 8;
+    case SSP_STATE_CC2:
+      ssp->cc += (uint16_t)byte << 8;
 
-      if(spp->cc == spp->ccc)
+      if(ssp->cc == ssp->ccc)
       {
-        spp->pck_cnt++;
-        spp->state = SPP_STATE_WAIT;
+        ssp->pck_cnt++;
+        ssp->state = SSP_STATE_WAIT;
 
         return 1;
       }
       else
       {
-        spp->err_cnt++;
+        ssp->err_cnt++;
       }
 
-      spp->state = SPP_STATE_WAIT;
+      ssp->state = SSP_STATE_WAIT;
       break;
 
     default:
@@ -108,7 +109,7 @@ uint8_t spp_receive(spp_t *spp, uint8_t byte)
   return 0;
 }
 //------------------------------------------------------------------------------
-uint16_t spp_create(uint8_t *buff, uint16_t buff_len, uint8_t *data, uint16_t data_len)
+uint16_t ssp_create(uint8_t *buff, uint16_t buff_len, uint8_t *data, uint16_t data_len)
 {
   uint16_t i, cc;
   uint8_t byte;
@@ -118,32 +119,36 @@ uint16_t spp_create(uint8_t *buff, uint16_t buff_len, uint8_t *data, uint16_t da
 
   buff_p = buff;
 
-  *buff++ = SPP_MAGIC;
-
-  *buff++ = data_len & 0xFF;
-  *buff++ = data_len >> 8;
-
+  *buff++ = SSP_MAGIC;
   cc = 0;
+
+  byte = data_len & 0xFF;
+  cc += byte;
+  *buff++ = byte;
+  if(byte == SSP_MAGIC) *buff++ = SSP_MAGIC;
+
+  byte = data_len >> 8;
+  cc += byte;
+  *buff++ = byte;
+  if(byte == SSP_MAGIC) *buff++ = SSP_MAGIC;
 
   for(i = 0; i < data_len; i++)
   {
     byte = *data++;
-
     cc += byte;
     *buff++ = byte;
-    if(byte == SPP_MAGIC) *buff++ = byte;
-
+    if(byte == SSP_MAGIC) *buff++ = SSP_MAGIC;
 
     if(buff_len < buff - buff_p + 2) return 0;
   }
 
   byte = cc & 0xFF;
   *buff++ = byte;
-  if(byte == SPP_MAGIC) *buff++ = byte;
+  if(byte == SSP_MAGIC) *buff++ = SSP_MAGIC;
 
   byte = cc >> 8;
   *buff++ = byte;
-  if(byte == SPP_MAGIC) *buff++ = byte;
+  if(byte == SSP_MAGIC) *buff++ = SSP_MAGIC;
 
   return buff - buff_p;
 }
