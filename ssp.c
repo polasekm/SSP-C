@@ -85,6 +85,8 @@ uint8_t ssp_receive(ssp_t *ssp, uint8_t byte)
 
     case SSP_STATE_CC2:
       ssp->cc += (uint16_t)byte << 8;
+      //ssp->state = SSP_STATE_WAIT;
+      //optimalizovat, lze nastavit uz tady...
 
       if(ssp->cc == ssp->ccc)
       {
@@ -153,3 +155,58 @@ uint16_t ssp_create(uint8_t *buff, uint16_t buff_len, uint8_t *data, uint16_t da
   return buff - buff_p;
 }
 //------------------------------------------------------------------------------
+uint16_t ssp_create2(uint8_t *buff, uint16_t buff_len, uint8_t *data1, uint16_t data1_len, uint8_t *data2, uint16_t data2_len)
+{
+  uint16_t i, cc;
+  uint8_t byte;
+  uint8_t *buff_p;
+  uint16_t data_len;
+
+  data_len = data1_len + data2_len;
+  if(buff_len < data_len + 1 + 2 + 2) return 0;
+
+  buff_p = buff;
+
+  *buff++ = SSP_MAGIC;
+  cc = 0;
+
+  byte = data_len & 0xFF;
+  cc += byte;
+  *buff++ = byte;
+  if(byte == SSP_MAGIC) *buff++ = SSP_MAGIC;
+
+  byte = data_len >> 8;
+  cc += byte;
+  *buff++ = byte;
+  if(byte == SSP_MAGIC) *buff++ = SSP_MAGIC;
+
+  for(i = 0; i < data1_len; i++)
+  {
+    byte = *data1++;
+    cc += byte;
+    *buff++ = byte;
+    if(byte == SSP_MAGIC) *buff++ = SSP_MAGIC;
+
+    if(buff_len < buff - buff_p + 2) return 0;
+  }
+
+  for(i = 0; i < data2_len; i++)
+  {
+    byte = *data2++;
+    cc += byte;
+    *buff++ = byte;
+    if(byte == SSP_MAGIC) *buff++ = SSP_MAGIC;
+
+    if(buff_len < buff - buff_p + 2) return 0;
+  }
+
+  byte = cc & 0xFF;
+  *buff++ = byte;
+  if(byte == SSP_MAGIC) *buff++ = SSP_MAGIC;
+
+  byte = cc >> 8;
+  *buff++ = byte;
+  if(byte == SSP_MAGIC) *buff++ = SSP_MAGIC;
+
+  return buff - buff_p;
+}

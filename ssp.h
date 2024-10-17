@@ -60,5 +60,6 @@ void ssp_init(ssp_t *ssp, uint8_t *buff, uint16_t size);
 
 uint8_t ssp_receive(ssp_t *ssp, uint8_t byte);
 uint16_t ssp_create(uint8_t *buff, uint16_t buff_len, uint8_t *data, uint16_t data_len);
+uint16_t ssp_create2(uint8_t *buff, uint16_t buff_len, uint8_t *data1, uint16_t data1_len, uint8_t *data2, uint16_t data2_len);
 //------------------------------------------------------------------------------
 #endif /* SSP_H_INCLUDED */
