@@ -114,7 +114,7 @@ uint8_t ssp_receive(ssp_t *ssp, uint8_t byte)
   return 0;
 }
 //------------------------------------------------------------------------------
-uint16_t ssp_create(uint8_t *buff, uint16_t buff_len, uint8_t *data, uint16_t data_len)
+uint16_t ssp_create(uint8_t *buff, uint16_t buff_len, uint8_t type, uint8_t *data, uint16_t data_len)
 {
   uint16_t i, cc;
   uint8_t byte;
@@ -125,7 +125,9 @@ uint16_t ssp_create(uint8_t *buff, uint16_t buff_len, uint8_t *data, uint16_t da
   buff_p = buff;
 
   *buff++ = SSP_MAGIC;
-  cc = 0;
+
+  cc = type;
+  *buff++ = type;
 
   byte = data_len & 0xFF;
   cc += byte;
@@ -158,7 +160,7 @@ uint16_t ssp_create(uint8_t *buff, uint16_t buff_len, uint8_t *data, uint16_t da
   return buff - buff_p;
 }
 //------------------------------------------------------------------------------
-uint16_t ssp_create2(uint8_t *buff, uint16_t buff_len, uint8_t *data1, uint16_t data1_len, uint8_t *data2, uint16_t data2_len)
+uint16_t ssp_create2(uint8_t *buff, uint16_t buff_len, uint8_t type, uint8_t *data1, uint16_t data1_len, uint8_t *data2, uint16_t data2_len)
 {
   uint16_t i, cc;
   uint8_t byte;
@@ -171,7 +173,9 @@ uint16_t ssp_create2(uint8_t *buff, uint16_t buff_len, uint8_t *data1, uint16_t 
   buff_p = buff;
 
   *buff++ = SSP_MAGIC;
-  cc = 0;
+
+  cc = type;
+  *buff++ = type;
 
   byte = data_len & 0xFF;
   cc += byte;
