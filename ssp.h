@@ -42,6 +42,7 @@ typedef struct
 
   uint8_t magic;        //
   ssp_state_t state;    //state
+  uint16_t type;        //packet type
   uint16_t len;         //packet length
   uint16_t cc;          //packet CC
   uint16_t ccc;         //receive data CC

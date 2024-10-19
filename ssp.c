@@ -17,10 +17,8 @@ void ssp_init(ssp_t *ssp, uint8_t *buff, uint16_t size)
   ssp->buff = buff;
   ssp->size = size;
 
-  ssp->write = buff;
   ssp->magic = 0;
   ssp->state = SSP_STATE_WAIT;
-  ssp->len = 0;
 
   ssp->err_cnt = 0;
   ssp->pck_cnt = 0;
@@ -28,7 +26,7 @@ void ssp_init(ssp_t *ssp, uint8_t *buff, uint16_t size)
 //------------------------------------------------------------------------------
 uint8_t ssp_receive(ssp_t *ssp, uint8_t byte)
 {
-  if(ssp->magic == 1)
+  if(ssp->magic != 0)
   {
     ssp->magic = 0;
 
@@ -36,12 +34,10 @@ uint8_t ssp_receive(ssp_t *ssp, uint8_t byte)
     {
       if(ssp->state != SSP_STATE_WAIT) ssp->err_cnt++;
 
-      ssp->state = SSP_STATE_LEN2;
-      ssp->write = ssp->buff;
-      ssp->len = byte;
+      ssp->type = byte;
       ssp->ccc = byte;
-      ssp->cc = 0;
 
+      ssp->state = SSP_STATE_LEN1;
       return 0;
     }
   }
@@ -56,9 +52,16 @@ uint8_t ssp_receive(ssp_t *ssp, uint8_t byte)
 
   switch(ssp->state)
   {
+    case SSP_STATE_LEN1:
+      ssp->len = byte;
+      ssp->ccc += byte;
+      ssp->state = SSP_STATE_LEN2;
+      break;
+
     case SSP_STATE_LEN2:
       ssp->len += (uint16_t)byte << 8;
       ssp->ccc += byte;
+      ssp->write = ssp->buff;
       ssp->state = SSP_STATE_DATA;
       break;
 
